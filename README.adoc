@@ -1,0 +1,5 @@
+= Svn Reporter
+
+== Usage
+
+svn log http://repository -r 162860:HEAD |  java -jar target/svnReporter-0.0.1-SNAPSHOT.jar  --stdin
