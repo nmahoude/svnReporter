@@ -65,22 +65,46 @@ public class SvnReporter {
 					date = header.group(3);
 					count = Long.parseLong(header.group(4));
 
-					// Find the blank line.
-					while (i.hasNext() && !patBlankLine.matcher(line = i.next()).matches())
-						;
+					String moduleName = null;
+					// Read the changed path until the blank line.
+					while (i.hasNext() && !patBlankLine.matcher(line = i.next()).matches()) {
+						// read changed path to autodetect module
+						moduleName = extractModuleFrom(line, moduleName);
+					}
+					
 
 					// Gather all of the text.
 					text = "";
 					while (i.hasNext() && count-- > 0) {
-						text += i.next() + (count > 0 ? System.getProperty("line.separator") : "");
+						String nextLine = i.next();
+						text += nextLine + (count > 0 ? ", " : "");
 					}
-
+					
+					
+					
 					// Add the line.
-					ret = ret + rnum + ";" + clean(user) + ";" + clean(date) + ";" + clean(text) + System.getProperty("line.separator");
+					ret += rnum + ";" + clean(user) + ";" + clean(date) + ";" + clean(text) + ";" + (moduleName  != null ? moduleName : "?")+ System.getProperty("line.separator");
 				}
 			}
 		}
 		return ret;
+	}
+
+	private static String extractModuleFrom(String line, String oldModuleName) {
+		if (oldModuleName != null) return oldModuleName;
+		
+		Pattern pattern = Pattern.compile("(.*)/(.*)/(trunk|branches|tags|release)(.*)");
+		Matcher matcher = pattern.matcher(line);
+		if (matcher.matches()) {
+//			System.err.println("Found a trunk, branch or tag : "+changedPath);
+			String moduleName = matcher.group(2);
+//			System.err.println("    -> "+moduleName);
+			return moduleName;
+		} else {
+//			System.err.println("Not found in "+changedPath);
+		}
+
+		return oldModuleName;
 	}
 
 	private static String clean(String input) {
